@@ -1,6 +1,52 @@
 @baseUrl = http://localhost:3000
 
-### AppControllerGetHello
+# RECADOS
 
-# @name AppControllerGetHello
-GET {{baseUrl}}/
+### findAll
+
+# @name findAll
+GET {{baseUrl}}/recados/
+?limit=17
+&offset=15
+&user=Rafa
+
+
+### findOne
+
+# @name findOne
+GET {{baseUrl}}/recados/10
+
+
+### createOne
+
+# @name createOne
+POST {{baseUrl}}/recados
+Content-Type: application/json
+
+{
+  "texto": "Este é um recado novo recado para testes",
+  "de": "Joana",
+  "para": "João",
+  "lido": false,
+  "data": "2025-11-28T16:26:59.781Z"
+}
+
+
+### updateOne
+
+# @name updateOne
+PATCH  {{baseUrl}}/recados/1
+Content-Type: application/json
+
+{
+  "texto": "Este é um recado atualizado",
+  "de": "Joana",
+  "para": "João",
+  "lido": false
+}
+
+
+### deleteOne
+
+# @name deleteOne
+DELETE {{baseUrl}}/recados/1
