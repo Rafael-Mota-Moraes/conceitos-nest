@@ -14,7 +14,7 @@ GET {{baseUrl}}/recados/
 
 # @name findOne
 GET {{baseUrl}}/recados/9
-
+Authorization: Bearer 123
 
 ### createOne
 
