@@ -14,6 +14,7 @@ import {
 import { RecadosService } from './recados.service';
 import { CreateRecadoDto } from './dto/create-recado.dto';
 import { UpdateRecadoDto } from './dto/update-recado.dto';
+import { PaginationDto } from 'src/common/dto/pagination.dto';
 
 @Controller('recados')
 export class RecadosController {
@@ -21,15 +22,12 @@ export class RecadosController {
 
   @HttpCode(HttpStatus.OK)
   @Get()
-  findAll(@Query() pagination: any) {
-    const { limit = 10, offset = 10 } = pagination;
-
-    // return `essa rota retorna todos os recados limit=${limit} offset=${offset}`
-    return this.recadosService.findAll();
+  findAll(@Query() paginationDto: PaginationDto) {
+    return this.recadosService.findAll(paginationDto);
   }
 
   @Get(':id')
-  findOne(@Param('id') id: string) {
+  findOne(@Param('id', ParseIntPipe) id: number) {
     return this.recadosService.findOne(id);
   }
 
@@ -40,19 +38,14 @@ export class RecadosController {
 
   @Patch(':id')
   update(
-    @Param('id', ParseIntPipe) id: string,
+    @Param('id', ParseIntPipe) id: number,
     @Body() updateRecadoDto: UpdateRecadoDto,
   ) {
-    console.log(
-      updateRecadoDto.constructor.name,
-      updateRecadoDto instanceof UpdateRecadoDto,
-    );
     return this.recadosService.update(id, updateRecadoDto);
   }
 
   @Delete(':id')
   remove(@Param('id', ParseIntPipe) id: number) {
-    console.log(id, typeof id);
     return this.recadosService.remove(id);
   }
 }
