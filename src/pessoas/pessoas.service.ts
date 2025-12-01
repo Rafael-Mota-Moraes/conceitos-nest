@@ -1,5 +1,6 @@
 import {
   ConflictException,
+  ForbiddenException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
@@ -9,20 +10,27 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Pessoa } from './entities/pessoa.entity';
 import { Repository } from 'typeorm';
 import { RecadosUtils } from 'src/recados/recados.utils';
+import { HashingService } from 'src/auth/hashing/hashing.service';
+import { TokenPayloadDto } from 'src/auth/dto/token-payload.dto';
+import * as path from 'path';
+import * as fs from 'fs/promises';
 
 @Injectable()
 export class PessoasService {
   constructor(
     @InjectRepository(Pessoa)
     private readonly pessoaRepository: Repository<Pessoa>,
-    private readonly recadosUtils: RecadosUtils,
+    private readonly hashingService: HashingService,
   ) {}
 
   async create(createPessoaDto: CreatePessoaDto) {
     try {
+      const passwordHash = await this.hashingService.hash(
+        createPessoaDto.password,
+      );
       const pessoaData = {
         nome: createPessoaDto.nome,
-        passwordHash: createPessoaDto.password,
+        passwordHash: passwordHash,
         email: createPessoaDto.email,
       };
 
@@ -56,11 +64,22 @@ export class PessoasService {
     return pessoa;
   }
 
-  async update(id: number, updatePessoaDto: UpdatePessoaDto) {
+  async update(
+    id: number,
+    updatePessoaDto: UpdatePessoaDto,
+    tokenPayload: TokenPayloadDto,
+  ) {
     const dadosPessoa = {
       nome: updatePessoaDto.nome,
-      passwordHash: updatePessoaDto.password,
     };
+
+    if (updatePessoaDto?.password) {
+      const passwordHash = await this.hashingService.hash(
+        updatePessoaDto.password,
+      );
+
+      dadosPessoa['passwordHash'] = passwordHash;
+    }
 
     const pessoa = await this.pessoaRepository.preload({
       id,
@@ -71,16 +90,50 @@ export class PessoasService {
       throw new NotFoundException('Pessoa não encontrada...');
     }
 
+    if (pessoa.id !== tokenPayload.sub) {
+      throw new ForbiddenException('PROÍBIDO');
+    }
+
     return this.pessoaRepository.save(pessoa);
   }
 
-  async remove(id: number) {
+  async remove(id: number, tokenPayload: TokenPayloadDto) {
     const pessoa = await this.pessoaRepository.findOneBy({ id: id });
 
     if (!pessoa) {
       throw new NotFoundException('Pessoa não encontrada...');
     }
 
+    if (pessoa.id !== tokenPayload.sub) {
+      throw new ForbiddenException('PROÍBIDO');
+    }
+
     return await this.pessoaRepository.remove(pessoa);
+  }
+
+  async uploadPicture(
+    file: Express.Multer.File,
+    tokenPayload: TokenPayloadDto,
+  ) {
+    const pessoa = await this.findOne(tokenPayload.sub);
+    const fileExtension = path
+      .extname(file.originalname)
+      .toLowerCase()
+      .substring(1);
+    const fileName = `${tokenPayload.sub}.${fileExtension}`;
+    const fileFullPath = path.resolve(process.cwd(), 'pictures', fileName);
+    console.log(fileFullPath);
+
+    await fs.writeFile(fileFullPath, file.buffer);
+    pessoa.picture = fileName;
+    await this.pessoaRepository.save(pessoa);
+
+    return {
+      fieldname: file.fieldname,
+      originalname: file.originalname,
+      encoding: file.encoding,
+      mimetype: file.mimetype,
+      size: file.size,
+    };
   }
 }

@@ -1,4 +1,7 @@
 @baseUrl = http://localhost:3000
+@authToken = {{authenticate.response.body.accessToken}}
+
+@refreshToken = {{authenticate.response.body.refreshToken}}
 
 # RECADOS
 
@@ -7,7 +10,7 @@
 # @name findAll
 GET {{baseUrl}}/recados/
 ?limit=10
-&offset=5
+&offset=10
 
 
 ### findOne
@@ -21,10 +24,10 @@ Authorization: Bearer 123
 # @name createOne
 POST {{baseUrl}}/recados
 Content-Type: application/json
+Authorization: Bearer {{authToken}}
 
 {
   "texto": "Este é um recado novo recado para testes 2",
-  "deId": 6,
   "paraId": 10
 }
 
@@ -32,7 +35,8 @@ Content-Type: application/json
 ### updateOne
 
 # @name updateOne
-PATCH  {{baseUrl}}/recados/9
+PATCH  {{baseUrl}}/recados/17
+Authorization: Bearer {{authToken}}
 Content-Type: application/json
 
 {
@@ -44,7 +48,8 @@ Content-Type: application/json
 ### deleteOne
 
 # @name deleteOne
-DELETE {{baseUrl}}/recados/2
+DELETE {{baseUrl}}/recados/6
+Authorization: Bearer {{authToken}}
 
 # Pessoas
 
@@ -52,30 +57,65 @@ DELETE {{baseUrl}}/recados/2
 GET {{baseUrl}}/pessoas/
 ?limit=10
 &offset=0
+Authorization: Bearer {{authToken}}
 
 ### Lista uma pessoa
-GET {{baseUrl}}/pessoas/6
+GET {{baseUrl}}/pessoas/11
+Authorization: Bearer {{authToken}}
 
 ### Cria uma pessoa
 POST {{baseUrl}}/pessoas/
 Content-Type: application/json
 
 {
-  "email": "root@email.com",
-  "password": "root",
-  "nome": "root"
+  "email": "rafael@email.com",
+  "password": "rafael",
+  "nome": "rafael"
 }
 
 ### Atualiza uma pessoa
-PATCH {{baseUrl}}/pessoas/6
+PATCH {{baseUrl}}/pessoas/11
 Content-Type: application/json
+Authorization: Bearer {{authToken}}
 
 {
-  "password": "123456",
-  "nome": "ADMIN"
+  "password": "rafael"
 }
 
 ### Apaga uma pessoa
 DELETE {{baseUrl}}/pessoas/1
+Authorization: Bearer {{authToken}}
+
+### AUTH
+
+### Faz login
+# @name authenticate
+POST {{baseUrl}}/auth
+Content-Type: application/json
+
+{
+  "email": "rafael@email.com",
+  "password": "rafael"
+}
+
+### Re-Autenticação
+POST {{baseUrl}}/auth/refresh/
+Content-Type: application/json
+
+{
+  "refreshToken": "{{refreshToken}}"
+}
 
 
+# Upload
+### Foto da pessoa
+POST {{baseUrl}}/pessoas/upload-picture/
+Authorization: Bearer {{authToken}}
+Content-Type: multipart/form-data; boundary=----BoundaryDelimitadorHttp
+
+------BoundaryDelimitadorHttp
+Content-Disposition: form-data; name="file"; filename="fff.png"
+Content-Type: image/png
+
+< ./dev/images/fff.png
+------BoundaryDelimitadorHttp--
